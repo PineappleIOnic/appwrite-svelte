@@ -28,10 +28,10 @@ npm run dev
 This should launch a server on `localhost:5000` with Live Reload
 
 ## Introducing the Appwrite SDK
-With this boilerplate we can now initialise the Appwrite SDK in the project before working on the login page. Doing this is simple go ahead and open up `src/main.js`and underneath `import App from  './App.svelte';` add:
+With this boilerplate we can now initialise the Appwrite SDK in the project before working on the login page. Doing this is simple go ahead and open up `src/main.js`and underneath `import App from './App.svelte';` add:
 ```js
-import  'appwrite';
-var appwrite =  new window.Appwrite();  // Used for compatability with a <script> imported appwrite installation
+import 'appwrite';
+const appwrite =  new window.Appwrite();  // Used for compatibility with a <script> imported appwrite installation
 appwrite
   .setEndpoint('http://localhost/v1')  // Set only when using self-hosted solution
   .setProject('ProjectID');
@@ -41,19 +41,19 @@ What this does is import the Appwrite JS SDK and then initialises it with the En
 One more thing we want to do is pass this appwrite object though props to `src/App.svelte` we can do this by finding:
 ```js
 const app =  new App({
-target: document.body,
-props:  {
-  name:  'world'
-}
+  target: document.body,
+  props:  {
+    name:  'world'
+  }
 });
 ```
 and adding `appwrite: appwrite` to the props object and removing the name prop so it looks like this:
 ```js
 const app =  new App({
-target: document.body,
-props:  {
-  appwrite: appwrite
-}
+  target: document.body,
+  props:  {
+    appwrite: appwrite
+  }
 });
 ```
 This means that the appwrite object is now accesible in `src/App.svelte` through a prop.
@@ -62,9 +62,9 @@ This means that the appwrite object is now accesible in `src/App.svelte` through
 Creating the Login Page is easy, go ahead and navigate to `src/App.svelte`  and remove all code within it, as we will be replacing this with our login form code with this removed we will move onto creating the logic behind this.
 
 First we want to start working on the script powering this, add the following to the top of `src/App.svelte`
-```js
+```svelte
 <script>
-  import  { onMount }  from  'svelte'
+  import  { onMount }  from  'svelte';
   export let appwrite;
   let username = ''; // These will store the change in inputs for the login process
   let password = '';
@@ -75,47 +75,43 @@ First we want to start working on the script powering this, add the following to
   let userprofile = false;
 
   // On page load check if user is logged in
-  onMount(() => {
-    getUserdata()
-  })
+  onMount(getUserdata);
 
   // Logout user
-  function  logout()  {
-    userprofile = false
+  const logout = () => {
+    userprofile = false;
     appwrite.account.deleteSession('current');
   }
 
   // Get userdata
-  function  getUserdata()  {
-    appwrite.account.get().then(response =>  {
-      loading =  false
-      userprofile = response
-    })
-   .catch(err =>  {
-     if (err == 'Error: Unauthorized') {
-       return
-     }
-     error = err
-    })
+  const getUserdata = asnyc () => {
+    try {
+      const response = await appwrite.account.get();
+      loading =  false;
+      userprofile = response;
+    } catch(error) {
+      if (err == 'Error: Unauthorized') return;
+      error = err
+    }
   }
 
   // The login function
-  function login(event)  {
-    if  (loading)  {
-      return // If still processing previous request then don't start a new one
-    }
-    error =  false;
-    loading =  true;
-    appwrite.account.createSession(event.target.email.value, event.target.password.value)
-    .then((response)  =>  {
-      getUserdata() // If login successful get user data
-    })
-    .catch((err)  =>  {
+  const login = async (event) => {
+    if (loading) return; // If still processing previous request then don't start a new one
+    try {
+      error = false;
+      loading = true;
+      const response = await appwrite.account.createSession(
+        event.target.email.value, 
+        event.target.password.value
+      );
+      getUserdata();
+    } catch(error) {
       loading = false;
-      error =  'Invalid Credentials'
-      console.error(err)
-    })
-}
+      error =  'Invalid Credentials';
+      console.error(error);
+    }
+  }
 </script>
 ```
 
@@ -134,40 +130,44 @@ We also use onMount() to check if the user is already logged in on page load.
 ## Creating the Login Page design
 With the logic in place we can now start working on the login pages design including the form, add the following code below the `<script>` you just added and not within it.
 
-```html
+```svelte
 <main>
-  <div  class="loginCore">
+  <div class="loginCore">
     {#if !userprofile}
-    {#if  (page ===  false)}
-    <div  class="loginPage">
-      <h1>Login</h1>
-      {#if  (error !==  false)}
-      <p  class="error">{error}</p>
+      {#if !page}
+        <div class="loginPage">
+          <h1>Login</h1>
+          {#if (error)}
+            <p class="error">{error}</p>
+          {/if}
+          <form on:submit|preventDefault={login}>
+            <input id="email" required placeholder="Email">
+            <input type="password" id="password" required placeholder="Password">
+            <button type="submit" disabled={loading}>{loading ? 'Please Wait' : 'Login'}</button>
+          </form>
+        </div>
+      {:else}
+        <div class="loginPage">
+          <h1>Register</h1>
+          {#if (error)}
+            <p class="error">{error}</p>
+          {/if}
+          <!-- Create Registration code here -->
+        </div>
       {/if}
-      <form  on:submit|preventDefault={login}>
-        <input id="email"  required  placeholder="Email">
-        <input type='password' id="password"  required  placeholder="Password">
-        <button  type="submit"  disabled={loading}>{loading ?  'Please Wait'  :  'Login'}</button>
-      </form>
-    </div>
+      <p>
+        {page ? 'Got an account?' : 'Haven't got an account?'}
+        <br>
+        <span on:click={() => page = !page}>{page ? 'Login' : 'Sign Up'}</span>
+      </p>
     {:else}
-    <div  class="loginPage">
-      <h1>Register</h1>
-      {#if  (error !==  false)}
-      <p  class="error">{error}</p>
-      {/if}
-      <!-- Create Registration code here -->
-    </div>
-    {/if}
-    <p>{page ?  'Got an account?'  :  "Haven't got an account?"}  <br>  <span  on:click={()  => page =  !page}>{page ?  'Login'  :  'Sign Up'}</span></p>
-    {:else}
-    <div class="loggedIn">
-      <h2>Logged In!</h2>
-      <h1>{userprofile.name}</h1>
-      <p>{userprofile.email}</p>
-      <p>ID: {userprofile.$id}</p>
-      <button on:click={logout}>Logout</button>
-    </div>
+      <div class="loggedIn">
+        <h2>Logged In!</h2>
+        <h1>{userprofile.name}</h1>
+        <p>{userprofile.email}</p>
+        <p>ID: {userprofile.$id}</p>
+        <button on:click={logout}>Logout</button>
+      </div>
     {/if}
   </div>
 </main>
@@ -175,21 +175,21 @@ With the logic in place we can now start working on the login pages design inclu
 ### Code Explanation
 (If you already know Svelte and understand this you can skip this section)
 
-This wierd type of HTML is Svelte's own superset of HTML which allows for JS to be embedded to create amazing web apps. I'll explain a few parts of this code.
+This weird type of HTML is Svelte's own superset of HTML which allows for JS to be embedded to create amazing web apps. I'll explain a few parts of this code.
 <br>
-```html
-{#if (page === false)}
+```svelte
+{#if !page}
 ```
 This is a condition statement for Svelte and allows us to add or remove elements based off conditions. This one for example is used to tell if we want to see the register or sign up page.
 <br>
 
-```html
-<p  class="error">{error}</p>
+```svelte
+<p class="error">{error}</p>
 ```
 `{}`in Svelte is similar to React's JSX Implementation and allows us to show variables from JS or run JS within the HTML. This one is used to display the error but later in the code you will see that I use this with a `?` operator to change text based off a variable.
 <br>
 
-```HTML
+```svelte
 <form on:submit|preventDefault={login}>
 ```
 `on:` is Svelte's way of binding events the `:preventDefault` section will preventDefault before running the login function when submit is called the event it sent to the previously written `login(event)` function.
@@ -199,47 +199,47 @@ This is a condition statement for Svelte and allows us to add or remove elements
 If you want you can style this yourself, but for those who don't want to add the following code below the `</main>` section of your code, it's embedded CSS and will style your login form.
 
 
-```html
+```svelte
 <style>
   :global(body) {
-  background: linear-gradient(90deg, rgba(209,0,176,1) 0%, rgba(0,249,255,1) 100%);
+    background: linear-gradient(90deg, rgba(209,0,176,1) 0%, rgba(0,249,255,1) 100%);
   }
   .loginCore {
-  position: absolute;
-  width: 300px;
-  background-color: white;
-  border-radius: 10px;
-  top: 50%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  text-align: center;
+    position: absolute;
+    width: 300px;
+    background-color: white;
+    border-radius: 10px;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    text-align: center;
   }
   .loginCore span {
-  color: rgb(0, 162, 255);
+    color: rgb(0, 162, 255);
   }
   .loginCore span:hover {
-  cursor: pointer;
+    cursor: pointer;
   }
   .loginPage input {
-  display: block;
-  margin: 0 auto;
-  margin-bottom: 20px;
+    display: block;
+    margin: 0 auto;
+    margin-bottom: 20px;
   }
   .loggedIn {
-  padding-top: 30px;
-  padding-bottom: 30px;
+    padding-top: 30px;
+    padding-bottom: 30px;
   }
   .loggedIn h1 {
-  margin: 0;
+    margin: 0;
   }
   .loggedIn h2 {
-  margin: 0;
+    margin: 0;
   }
   .loggedIn p {
-  margin: 10px;
+    margin: 10px;
   }
   .error {
-  color: red;
+    color: red;
   }
 </style>
 ```
