@@ -31,7 +31,7 @@ This should launch a server on `localhost:5000` with Live Reload
 With this boilerplate we can now initialise the Appwrite SDK in the project before working on the login page. Doing this is simple go ahead and open up `src/main.js`and underneath `import App from './App.svelte';` add:
 ```js
 import 'appwrite';
-const appwrite =  new window.Appwrite();  // Used for compatibility with a <script> imported appwrite installation
+const appwrite = new window.Appwrite();  // Used for compatibility with a <script> imported appwrite installation
 appwrite
   .setEndpoint('http://localhost/v1')  // Set only when using self-hosted solution
   .setProject('ProjectID');
@@ -89,7 +89,7 @@ First we want to start working on the script powering this, add the following to
       const response = await appwrite.account.get();
       loading =  false;
       userprofile = response;
-    } catch(error) {
+    } catch(err) {
       if (err == 'Error: Unauthorized') return;
       error = err
     }
