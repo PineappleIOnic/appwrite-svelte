@@ -1,0 +1,2 @@
+# appwrite-svelte
+Appwrite + Svelte = ❤️
