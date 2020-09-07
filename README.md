@@ -137,7 +137,7 @@ With the logic in place we can now start working on the login pages design inclu
       {#if !page}
         <div class="loginPage">
           <h1>Login</h1>
-          {#if (error)}
+          {#if error}
             <p class="error">{error}</p>
           {/if}
           <form on:submit|preventDefault={login}>
@@ -149,7 +149,7 @@ With the logic in place we can now start working on the login pages design inclu
       {:else}
         <div class="loginPage">
           <h1>Register</h1>
-          {#if (error)}
+          {#if error}
             <p class="error">{error}</p>
           {/if}
           <!-- Create Registration code here -->
