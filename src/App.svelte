@@ -9,130 +9,124 @@
 	let page = false
 	let userprofile = false
 
-	function logout() {
-		userprofile = false
+	const logout = () => {
+		userprofile = false;
 		appwrite.account.deleteSession('current');
 	}
 	
-	onMount(() => {
-		getUserdata()
-	})
+	onMount(getUserdata);
 
-	function getUserdata() {
-	  appwrite.account.get().then(response => {
-	    loading = false
-	    userprofile = response
-	  })
-	  .catch(err => {
-		if (err == 'Error: Unauthorized') {
-			return
+	const getUserdata = asnyc () => {
+		try {
+			const response = await appwrite.account.get();
+	      		loading =  false;
+			userprofile = response;
+		} catch(err) {
+			if (err == 'Error: Unauthorized') return;
+			error = err;
 		}
-	    error = err
-	  })
+	  }
+
+	const login = async (event) => {
+		if (loading) return; // If still processing previous request then don't start a new one
+		try {
+			error = false;
+			loading = true;
+			const response = await appwrite.account.createSession(
+				event.target.email.value, 
+				event.target.password.value
+			);
+			getUserdata();
+		} catch(error) {
+			loading = false;
+			error =  'Invalid Credentials';
+			console.error(error);
+		}
 	}
 
-	function login(event) {
-		if (loading) {
-			return
-		}
-		error = false
-		loading = true
-		
-		appwrite.account.createSession(event.target.email.value, event.target.password.value)
-		.then((response) => {
-			getUserdata()
-		})
-		.catch((err) => {
-			loading = false
-			error = 'Invalid Credentials'
-			console.error(err)
-		})
-	}
+	const register = async (event) => {
+  		if (loading) return;
 
-	function register(event) {
-	  if (loading) {
-	    return
-	  }
+		  error = false;
 
-	  error = false
-
-	  // Password confirmation
-	  if (event.target.password.value !== event.target.confirmPassword.value) {
-		error = 'Error: Passwords must be matching.'
-		return;
-	  }
+		  // Password confirmation
+		  if (event.target.password.value !== event.target.confirmPassword.value) {
+			error = 'Error: Passwords must be matching.';
+			return;
+		  }
 
 
-	  // Length Validation
-	  if (!(event.target.password.value.length >= 6 && event.target.password.value.length <= 32)) {
-		error = 'Error: Password must be between 6 and 32 characters.'
-		return;
-	  }
+		  // Length Validation
+		  if (!(event.target.password.value.length >= 6 && event.target.password.value.length <= 32)) {
+			error = 'Error: Password must be between 6 and 32 characters.';
+			return;
+		  }
 
-	  if (event.target.username.value.length >= 100) {
-		error = 'Error: Username can not exceed 100 characters'
-		return;
-	  }
+		  if (event.target.username.value.length >= 100) {
+			error = 'Error: Username can not exceed 100 characters';
+			return;
+		  }
 
-	  // Email validation
-	  const emailRegex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-	  if (!emailRegex.test(event.target.email.value)) {
-		error = 'Error: Invalid Email'
-		return;
-	  }
+		  // Email validation
+		  const emailRegex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		  if (!emailRegex.test(event.target.email.value)) {
+			error = 'Error: Invalid Email';
+			return;
+		  }
 
-	  loading = true
+		loading = true;
 
-      appwrite.account.create(event.target.email.value, event.target.password.value, event.target.username.value)
-		.then((response) => {
-			appwrite.account.createSession(event.target.email.value, event.target.password.value)
-		    .then((response) => {
-				getUserdata()
-		    })
-		})
-		.catch((err) => {
-			loading = false
-			console.log(err)
+		await appwrite.account.create(event.target.email.value, event.target.password.value, event.target.username.value);
+		await appwrite.account.createSession(event.target.email.value, event.target.password.value);
+		getUserdata();
+
+		} catch(err) {
+			loading = false;
+			console.log(err);
 			if (err.response) {
-				error = err.response.message
+				error = err.response.message;
 			} else {
-			  error = err
+		  		error = err;
 			}
-		})
+		}
 	}
 </script>
 
 <main>
-  <div  class="loginCore">
+  <div class="loginCore">
     {#if !userprofile}
-    {#if  (page ===  false)}
-    <div  class="loginPage">
+    {#if (!page)}
+    <div class="loginPage">
       <h1>Login</h1>
-      {#if  (error !==  false)}
-      <p  class="error">{error}</p>
+      {#if error}
+      	<p class="error">{error}</p>
       {/if}
-      <form  on:submit|preventDefault={login}>
-        <input id="email"  required  placeholder="Email">
-        <input type='password' id="password"  required  placeholder="Password">
-        <button  type="submit"  disabled={loading}>{loading ?  'Please Wait'  :  'Login'}</button>
+      <form on:submit|preventDefault={login}>
+        <input id="email" required placeholder="Email">
+        <input type="password" id="password" required placeholder="Password">
+        <button type="submit" disabled={loading}>{loading ? 'Please Wait' : 'Login'}</button>
       </form>
     </div>
     {:else}
     <div  class="loginPage">
       <h1>Register</h1>
-      {#if  (error !==  false)}
-      <p  class="error">{error}</p>
+      {#if error}
+      	<p class="error">{error}</p>
       {/if}
-      <form  on:submit|preventDefault={register}>
-        <input id="username" required  placeholder="Username">
-        <input id="email" required  placeholder="Email">
-        <input type='password' id="password"  required  placeholder="Password">
-        <input type='password' id="confirmPassword"  required  placeholder="Confirm Password">
-        <button  type="submit"  disabled={loading}>{loading ?  'Please Wait'  :  'Register'}</button>
+      <form on:submit|preventDefault={register}>
+        <input id="username" required placeholder="Username">
+        <input id="email" required placeholder="Email">
+        <input type="password" id="password" required placeholder="Password">
+        <input type="password" id="confirmPassword" required placeholder="Confirm Password">
+        <button type="submit" disabled={loading}>{loading ? 'Please Wait' : 'Register'}</button>
       </form>
     </div>
     {/if}
-    <p>{page ?  'Got an account?'  :  "Haven't got an account?"}  <br>  <span  on:click={()  => page =  !page}>{page ?  'Login'  :  'Sign Up'}</span></p>
+    <p>
+      {page ? 'Got an account?' : 'Haven't got an account?'}
+      <br>
+      <span on:click={() => page = !page}>{page ? 'Login' : 'Sign Up'}</span>
+    </p>
     {:else}
     <div class="loggedIn">
       <h2>Logged In!</h2>
