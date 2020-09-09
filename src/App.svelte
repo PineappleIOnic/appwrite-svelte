@@ -13,19 +13,19 @@
 		userprofile = false;
 		appwrite.account.deleteSession('current');
 	}
-	
-	onMount(getUserdata);
 
-	const getUserdata = asnyc () => {
+	const getUserdata = async () => {
 		try {
 			const response = await appwrite.account.get();
-	      		loading =  false;
+		     		loading =  false;
 			userprofile = response;
 		} catch(err) {
 			if (err == 'Error: Unauthorized') return;
 			error = err;
 		}
-	  }
+	}
+	
+	onMount(getUserdata);
 
 	const login = async (event) => {
 		if (loading) return; // If still processing previous request then don't start a new one
@@ -45,50 +45,39 @@
 	}
 
 	const register = async (event) => {
-  		if (loading) return;
+  		if (loading) { return }
 
-		  error = false;
+		error = false;
 
-		  // Password confirmation
-		  if (event.target.password.value !== event.target.confirmPassword.value) {
+		// Password confirmation
+		if (event.target.password.value !== event.target.confirmPassword.value) {
 			error = 'Error: Passwords must be matching.';
 			return;
-		  }
+		}
 
 
-		  // Length Validation
-		  if (!(event.target.password.value.length >= 6 && event.target.password.value.length <= 32)) {
+		// Length Validation
+		if (!(event.target.password.value.length >= 6 && event.target.password.value.length <= 32)) {
 			error = 'Error: Password must be between 6 and 32 characters.';
 			return;
-		  }
+		}
 
-		  if (event.target.username.value.length >= 100) {
+		if (event.target.username.value.length >= 100) {
 			error = 'Error: Username can not exceed 100 characters';
 			return;
-		  }
+		}
 
-		  // Email validation
-		  const emailRegex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-		  if (!emailRegex.test(event.target.email.value)) {
+		// Email validation
+		const emailRegex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		if (!emailRegex.test(event.target.email.value)) {
 			error = 'Error: Invalid Email';
 			return;
-		  }
+		}
 
 		loading = true;
 
 		await appwrite.account.create(event.target.email.value, event.target.password.value, event.target.username.value);
-		await appwrite.account.createSession(event.target.email.value, event.target.password.value);
-		getUserdata();
-
-		} catch(err) {
-			loading = false;
-			console.log(err);
-			if (err.response) {
-				error = err.response.message;
-			} else {
-		  		error = err;
-			}
-		}
+		await appwrite.account.createSession(event.target.email.value, event.target.password.value);		
 	}
 </script>
 
@@ -123,7 +112,7 @@
     </div>
     {/if}
     <p>
-      {page ? 'Got an account?' : 'Haven't got an account?'}
+      {page ? 'Got an account?' : "Haven't got an account?"}
       <br>
       <span on:click={() => page = !page}>{page ? 'Login' : 'Sign Up'}</span>
     </p>

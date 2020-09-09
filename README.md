@@ -64,54 +64,50 @@ Creating the Login Page is easy, go ahead and navigate to `src/App.svelte`  and 
 First we want to start working on the script powering this, add the following to the top of `src/App.svelte`
 ```svelte
 <script>
-  import  { onMount }  from  'svelte';
-  export let appwrite;
-  let username = ''; // These will store the change in inputs for the login process
-  let password = '';
+	export let appwrite
+	import { onMount } from 'svelte'
 
-  let error = false;
-  let loading = false;
-  let page = false;
-  let userprofile = false;
+	let username = '' // These will store the change in inputs for the login process
+	let password = ''
+	let error = false
+	let loading = false
+	let page = false
+	let userprofile = false
 
-  // On page load check if user is logged in
-  onMount(getUserdata);
+	const logout = () => {
+		userprofile = false;
+		appwrite.account.deleteSession('current');
+	}
 
-  // Logout user
-  const logout = () => {
-    userprofile = false;
-    appwrite.account.deleteSession('current');
-  }
+	const getUserdata = async () => {
+		try {
+			const response = await appwrite.account.get();
+		     		loading =  false;
+			userprofile = response;
+		} catch(err) {
+			if (err == 'Error: Unauthorized') return;
+			error = err;
+		}
+	}
+	
+	onMount(getUserdata);
 
-  // Get userdata
-  const getUserdata = asnyc () => {
-    try {
-      const response = await appwrite.account.get();
-      loading =  false;
-      userprofile = response;
-    } catch(err) {
-      if (err == 'Error: Unauthorized') return;
-      error = err
-    }
-  }
-
-  // The login function
-  const login = async (event) => {
-    if (loading) return; // If still processing previous request then don't start a new one
-    try {
-      error = false;
-      loading = true;
-      const response = await appwrite.account.createSession(
-        event.target.email.value, 
-        event.target.password.value
-      );
-      getUserdata();
-    } catch(error) {
-      loading = false;
-      error =  'Invalid Credentials';
-      console.error(error);
-    }
-  }
+	const login = async (event) => {
+		if (loading) return; // If still processing previous request then don't start a new one
+		try {
+			error = false;
+			loading = true;
+			const response = await appwrite.account.createSession(
+				event.target.email.value, 
+				event.target.password.value
+			);
+			getUserdata();
+		} catch(error) {
+			loading = false;
+			error =  'Invalid Credentials';
+			console.error(error);
+		}
+	}
 </script>
 ```
 
@@ -156,7 +152,7 @@ With the logic in place we can now start working on the login pages design inclu
         </div>
       {/if}
       <p>
-        {page ? 'Got an account?' : 'Haven't got an account?'}
+        {page ? 'Got an account?' : "Haven't got an account?"}
         <br>
         <span on:click={() => page = !page}>{page ? 'Login' : 'Sign Up'}</span>
       </p>
